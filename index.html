@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Caesar Cipher — Encrypt & Decrypt</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#5B4FCF;--accent-light:#EEEDFE;--accent-dark:#3C3489;
+  --success:#1D9E75;--success-light:#E1F5EE;
+  --bg:#F5F4F2;--surface:#FFFFFF;--surface2:#F1EFE8;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+  --text:#1a1a1a;--text2:#5a5a6a;--text3:#9a9aaa;
+  --mono:'IBM Plex Mono',monospace;
+  --radius-md:8px;--radius-lg:12px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0e0e16;--surface:#14141f;--surface2:#1a1a28;
+    --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);
+    --text:#e8e8f0;--text2:#8888aa;--text3:#4a4a6a;
+    --accent-light:#1a1535;--accent-dark:#AFA9EC;
+    --success-light:#04342C;
+  }
+}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;padding:2rem 1rem 4rem}
+.app{max-width:680px;margin:0 auto}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.title{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-0.5px}
+.title span{color:var(--accent)}
+.subtitle{font-size:13px;color:var(--text2);margin-top:2px}
+.badge{font-size:11px;font-weight:500;background:var(--accent-light);color:var(--accent-dark);padding:5px 12px;border-radius:20px}
+.mode-toggle{display:grid;grid-template-columns:1fr 1fr;background:var(--surface2);border-radius:var(--radius-lg);padding:4px;margin-bottom:1.25rem;border:0.5px solid var(--border)}
+.mode-btn{padding:10px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:15px;font-weight:500;color:var(--text2);cursor:pointer;border-radius:10px;transition:all .15s}
+.mode-btn.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.field-label{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+textarea{width:100%;font-family:var(--mono);font-size:13px;padding:12px;border:0.5px solid var(--border);border-radius:var(--radius-md);background:var(--surface2);color:var(--text);resize:vertical;min-height:100px;outline:none;line-height:1.6;transition:border-color .15s}
+textarea:focus{border-color:var(--accent)}
+.shift-row{display:flex;align-items:center;gap:16px;margin-bottom:1rem}
+.shift-label{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+input[type=range]{flex:1;accent-color:var(--accent);height:4px;cursor:pointer}
+.shift-val{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--accent);min-width:40px;text-align:center}
+.shift-presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center}
+.presets-label{font-size:12px;color:var(--text3)}
+.preset{padding:5px 12px;font-size:12px;font-weight:500;font-family:'Outfit',sans-serif;border:0.5px solid var(--border2);border-radius:20px;background:transparent;color:var(--text2);cursor:pointer;transition:all .12s}
+.preset:hover,.preset.active{background:var(--accent-light);color:var(--accent-dark);border-color:var(--accent)}
+.alphabet-vis{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:1rem;margin-bottom:1rem;overflow-x:auto}
+.alpha-vis-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.alpha-row{display:flex;gap:0;min-width:max-content}
+.alpha-cell{width:22px;text-align:center}
+.alpha-plain{font-family:var(--mono);font-size:11px;color:var(--text2);padding:1px 0}
+.alpha-arrow{font-size:9px;color:var(--text3);text-align:center;line-height:1.4}
+.alpha-cipher{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent);padding:1px 0}
+.output-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.output-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.output-label{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+.copy-btn{padding:5px 14px;font-size:12px;font-family:'Outfit',sans-serif;font-weight:500;border:0.5px solid var(--border2);border-radius:20px;background:transparent;color:var(--text2);cursor:pointer;transition:all .12s}
+.copy-btn:hover{background:var(--success-light);color:var(--success);border-color:var(--success)}
+.copy-btn.copied{background:var(--success-light);color:var(--success);border-color:var(--success)}
+.output-text{font-family:var(--mono);font-size:13px;color:var(--text);word-break:break-all;line-height:1.7;min-height:52px;white-space:pre-wrap}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem}
+.stat-card{background:var(--surface2);border-radius:var(--radius-md);padding:14px;text-align:center}
+.stat-val{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--text)}
+.stat-key{font-size:11px;color:var(--text3);margin-top:3px}
+.brute-section{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem}
+.brute-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.brute-row{display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--border)}
+.brute-row:last-child{border-bottom:none}
+.brute-shift{font-family:var(--mono);font-size:12px;color:var(--accent);min-width:48px;font-weight:500}
+.brute-text{font-family:var(--mono);font-size:12px;color:var(--text);word-break:break-all;line-height:1.5}
+.how-it-works{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-top:1.5rem}
+.how-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px}
+.how-body{font-size:13px;color:var(--text2);line-height:1.7}
+.how-body code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:1px 5px;border-radius:4px;color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top-bar">
+    <div>
+      <div class="title">Caesar <span>Cipher</span></div>
+      <div class="subtitle">Classical substitution encryption</div>
+    </div>
+    <div class="badge">ROT / Shift cipher</div>
+  </div>
+
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-enc" onclick="setMode('encrypt')">Encrypt</button>
+    <button class="mode-btn" id="btn-dec" onclick="setMode('decrypt')">Decrypt</button>
+  </div>
+
+  <div class="card">
+    <div class="field-label" id="input-label">Plaintext</div>
+    <textarea id="input-text" placeholder="Type your message here..." oninput="processLive()">Hello, World!</textarea>
+  </div>
+
+  <div class="shift-row">
+    <span class="shift-label">Shift</span>
+    <input type="range" id="shift-slider" min="1" max="25" value="3" step="1" oninput="onShift(this.value)">
+    <span class="shift-val" id="shift-display">3</span>
+  </div>
+
+  <div class="shift-presets">
+    <span class="presets-label">Presets:</span>
+    <button class="preset active" onclick="setShift(3,this)">ROT-3</button>
+    <button class="preset" onclick="setShift(13,this)">ROT-13</button>
+    <button class="preset" onclick="setShift(5,this)">ROT-5</button>
+    <button class="preset" onclick="setShift(7,this)">ROT-7</button>
+    <button class="preset" onclick="setShift(17,this)">ROT-17</button>
+    <button class="preset" onclick="setShift(21,this)">ROT-21</button>
+  </div>
+
+  <div class="alphabet-vis">
+    <div class="alpha-vis-label">Alphabet mapping (plain → cipher)</div>
+    <div class="alpha-row" id="alpha-vis"></div>
+  </div>
+
+  <div class="output-card">
+    <div class="output-header">
+      <span class="output-label" id="output-label">Ciphertext</span>
+      <button class="copy-btn" id="copy-btn" onclick="copyOutput()">Copy</button>
+    </div>
+    <div class="output-text" id="output-text">Khoor, Zruog!</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-val" id="s-chars">13</div><div class="stat-key">Characters</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-letters">10</div><div class="stat-key">Letters shifted</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-shift">3</div><div class="stat-key">Shift applied</div></div>
+  </div>
+
+  <div class="brute-section" id="brute-section" style="display:none">
+    <div class="brute-title">Brute-force — all 25 possible decryptions</div>
+    <div id="brute-list"></div>
+  </div>
+
+  <div class="how-it-works">
+    <div class="how-title">How Caesar Cipher works</div>
+    <div class="how-body">
+      Each letter in the plaintext is shifted by a fixed number of positions in the alphabet. With shift 3: <code>A→D</code>, <code>B→E</code>, <code>Z→C</code>. Numbers, spaces, and punctuation are left unchanged. To decrypt, simply shift in the opposite direction (or shift by <code>26 − n</code>). Julius Caesar reportedly used a shift of 3 for military communications.
+    </div>
+  </div>
+</div>
+
+<script>
+let mode='encrypt', shift=3;
+
+function caesar(text, s, decrypt){
+  const n = decrypt ? (26 - s) % 26 : s;
+  return text.split('').map(ch=>{
+    if(/[a-z]/.test(ch)) return String.fromCharCode((ch.charCodeAt(0)-97+n)%26+97);
+    if(/[A-Z]/.test(ch)) return String.fromCharCode((ch.charCodeAt(0)-65+n)%26+65);
+    return ch;
+  }).join('');
+}
+
+function renderAlpha(){
+  const vis=document.getElementById('alpha-vis');
+  let html='';
+  for(let i=0;i<26;i++){
+    const plain=String.fromCharCode(65+i);
+    const enc=String.fromCharCode((i+shift)%26+65);
+    html+=`<div class="alpha-cell"><div class="alpha-plain">${plain}</div><div class="alpha-arrow">↓</div><div class="alpha-cipher">${enc}</div></div>`;
+  }
+  vis.innerHTML=html;
+}
+
+function processLive(){
+  const txt=document.getElementById('input-text').value;
+  const isDec=mode==='decrypt';
+  const out=caesar(txt,shift,isDec);
+  document.getElementById('output-text').textContent=out||'';
+  const letters=txt.split('').filter(c=>/[a-zA-Z]/.test(c)).length;
+  document.getElementById('s-chars').textContent=txt.length;
+  document.getElementById('s-letters').textContent=letters;
+  document.getElementById('s-shift').textContent=shift;
+  if(isDec) renderBrute(txt);
+}
+
+function renderBrute(txt){
+  const list=document.getElementById('brute-list');
+  if(!txt){list.innerHTML='';return}
+  let html='';
+  for(let s=1;s<=25;s++){
+    const result=caesar(txt,s,true);
+    html+=`<div class="brute-row"><span class="brute-shift">shift ${s}</span><span class="brute-text">${result.substring(0,90)}${result.length>90?'…':''}</span></div>`;
+  }
+  list.innerHTML=html;
+}
+
+function onShift(val){
+  shift=parseInt(val);
+  document.getElementById('shift-display').textContent=shift;
+  document.querySelectorAll('.preset').forEach(b=>b.classList.remove('active'));
+  [{v:3,i:0},{v:13,i:1},{v:5,i:2},{v:7,i:3},{v:17,i:4},{v:21,i:5}].forEach(p=>{
+    if(p.v===shift) document.querySelectorAll('.preset')[p.i].classList.add('active');
+  });
+  renderAlpha();processLive();
+}
+
+function setShift(val,el){
+  shift=val;
+  document.getElementById('shift-slider').value=val;
+  document.getElementById('shift-display').textContent=val;
+  document.querySelectorAll('.preset').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderAlpha();processLive();
+}
+
+function setMode(m){
+  mode=m;
+  const isEnc=m==='encrypt';
+  document.getElementById('btn-enc').classList.toggle('active',isEnc);
+  document.getElementById('btn-dec').classList.toggle('active',!isEnc);
+  document.getElementById('input-label').textContent=isEnc?'Plaintext':'Ciphertext';
+  document.getElementById('output-label').textContent=isEnc?'Ciphertext':'Plaintext';
+  document.getElementById('input-text').placeholder=isEnc?'Type your message here...':'Paste ciphertext to decode...';
+  document.getElementById('brute-section').style.display=isEnc?'none':'block';
+  processLive();
+}
+
+function copyOutput(){
+  const txt=document.getElementById('output-text').textContent;
+  if(!txt)return;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn=document.getElementById('copy-btn');
+    btn.textContent='Copied!';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},1500);
+  });
+}
+
+renderAlpha();
+processLive();
+</script>
+</body>
+</html>
